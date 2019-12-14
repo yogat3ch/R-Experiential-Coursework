@@ -22,7 +22,6 @@ rmarkdown::html_dependency_jquery()
 rmarkdown::html_dependency_bootstrap("spacelab")
 rmarkdown::html_dependency_jqueryui()
 rmarkdown::html_dependency_highlightjs("pygments")
-# rmarkdown::html_dependency_font_awesome()
 # Make reproducible
 set.seed(1)
 # Load packages
@@ -49,7 +48,7 @@ rmd <- addChunkTitles(path=rstudioapi::getSourceEditorContext()$path)
 write(rmd,file=(rstudioapi::getSourceEditorContext()$path))
 ```
 
-```{r 'Load Data', results = "hide"}
+```{r 'Load Data', results = "hide", cache = F}
 if(file.info("RLineCounter.RData")$mtime < lubridate::now() - lubridate::weeks(12)) {
   source("RLineCounter&Coursework.R")
   save(file = "RLineCounter.RData", list = c(".packages",".functions","total.lines","Coursework"))
@@ -135,6 +134,8 @@ Row
 
 ### Coursework
 
+
+
 ```{r, results='asis'}
 fluidRow(
  HTML('<div class="tabbable">',
@@ -150,11 +151,31 @@ fluidRow(
     <div class="tab-pane active" data-value="Fall2017" id="tab-3313-Fall2017"></div>
   </div>'),
   tagList(purrr::imap(Coursework[-1], ~{
+                      .course <- .x
+                      ggsave("S.png", plot = .course$sem_graph, device = "png", dpi = 72, scale= .75)
+                      .bs <- bsplus::bs_accordion(id = .y) %>%
+                bsplus::bs_set_opts(panel_type = "success", use_heading_link = TRUE)
+                purrr::iwalk(.course[names(.course) != "sem_graph"], ~{
+                  ggsave("Class.png", plot = .x$graph, device = "png", dpi = 72, scale= .75)
+                  .bs <<- .bs %>%
+                    bsplus::bs_append(title = glue::glue("{.y} - {.x$fullname}"), content = 
+                                        tags$div(tags$p(glue::glue("Description: {.x$description}")), img(src = paste0("data:image/png;base64,",RCurl::base64Encode(readBin("Class.png", "raw", file.info("Class.png")[1, "size"]), "txt")))))
+                                      
+                })
       div(class="tab-content", `data-tabsetid` = 3313,
-          div(class = "tab-pane", `data-value` = .y, id = glue::glue("tab-3313-{.y}")))
+          div(class = "tab-pane", `data-value` = .y, id = glue::glue("tab-3313-{.y}"),
+              img(src = paste0("data:image/png;base64,",RCurl::base64Encode(readBin("S.png", "raw", file.info("S.png")[1, "size"]), "txt"))),
+              .bs
+              ))
     })),
   HTML('</div>')
 )
+# library(magick)
+# img <- image_graph(600, 400, res = 96)
+# print(Coursework$Fall2017$sem_graph)
+# dev.off()
+# img <- image_background(image_trim(img), 'white')
+# animation <- image_animate(img)
 ```
 
 
@@ -310,9 +331,5 @@ hours %>%
   ggsave("../../HoursGraph.png", device = "png", dpi = "screen")
 ```
 
-```{r, eval = F}
-HTML('<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
-<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>')
-```
+
 
