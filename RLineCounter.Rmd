@@ -9,7 +9,7 @@ output:
     orientation: rows
     keep_md: no
     theme: spacelab
-    css: ["https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/all.min.css", "rlinecounter.css"]
+    css: ["https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/all.min.css", "RExperience.min.css"]
 ---
 
 ```{r setup, include=FALSE}
@@ -28,16 +28,6 @@ set.seed(1)
 req.packages <- c("tidyverse","htmltools","magrittr", "printr", "lubridate", "shiny", "flexdashboard")
 library(shinyWidgets)
 HDA::startPkgs(req.packages)
-# tags$head(HTML('<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">'))
-# htmltools::htmlDependency("jquery", "3.3.1",
-#   src = c(href= "C:\\Users\\Administrator\\Documents\\R\\Bootstrap4.3.1"),
-#   script = "jquery-3.3.1.slim.min.js")
-# htmltools::htmlDependency("popper.min.js", "1.14.7",
-#   src = c(href= "C:\\Users\\Administrator\\Documents\\R\\Bootstrap4.3.1"),
-#   script = "popper.min.js")
-# htmltools::htmlDependency("bootstrap", "4.3.1",
-#   src = c(href= "C:\\Users\\Administrator\\Documents\\R\\Bootstrap4.3.1"),
-#   script = "bootstrap.min.js")
 ```
 
 
@@ -89,7 +79,7 @@ Row
 </div>
 </div>
 <div class="col-sm-4">
-<div class="value-box" style="background:#563d7c">
+<div class="value-box" style="background:#c3b0e0">
 <div class="inner">
 <p class = "value">`r nrow(.packages)`</p>
 <p class="caption">Total Packages Used</p>
@@ -134,26 +124,11 @@ Row
 
 ### Coursework
 
-
-
-```{r, results='asis'}
-fluidRow(
- HTML('<div class="tabbable">',
-  '<ul class="nav nav-tabs" data-tabsetid="3313">
-    <li class="active">
-      <a href="#tab-3313-Fall2017" data-toggle="tab" data-value="Fall2017">Fall 2017</a>
-    </li>'),
-  tagList(purrr::imap(Coursework[-1], ~{
-      tags$li(tags$a(href = glue::glue("#tab-3313-{.y}"), `data-toggle` = "tab", `data-value` = .y, .y))
-    })),  
-  HTML('</ul>
-    <div class="tab-content" data-tabsetid="3313">
-    <div class="tab-pane active" data-value="Fall2017" id="tab-3313-Fall2017"></div>
-  </div>'),
-  tagList(purrr::imap(Coursework[-1], ~{
-                      .course <- .x
-                      ggsave("S.png", plot = .course$sem_graph, device = "png", dpi = 72, scale= .75)
-                      .bs <- bsplus::bs_accordion(id = .y) %>%
+```{r 'Vertical Tab Panel', eval = T}
+tabs <- purrr::imap(Coursework, ~{
+  .course <- .x
+    ggsave(glue::glue("{which(names(Coursework) == .y)}_{.y}.png"), plot = .x$sem_graph, path = "sem_graphs", device = "png", dpi = 72, scale= .75)
+   .bs <- bsplus::bs_accordion(id = .y) %>%
                 bsplus::bs_set_opts(panel_type = "success", use_heading_link = TRUE)
                 purrr::iwalk(.course[names(.course) != "sem_graph"], ~{
                   ggsave("Class.png", plot = .x$graph, device = "png", dpi = 72, scale= .75)
@@ -162,174 +137,20 @@ fluidRow(
                                         tags$div(tags$p(glue::glue("Description: {.x$description}")), img(src = paste0("data:image/png;base64,",RCurl::base64Encode(readBin("Class.png", "raw", file.info("Class.png")[1, "size"]), "txt")))))
                                       
                 })
-      div(class="tab-content", `data-tabsetid` = 3313,
-          div(class = "tab-pane", `data-value` = .y, id = glue::glue("tab-3313-{.y}"),
-              img(src = paste0("data:image/png;base64,",RCurl::base64Encode(readBin("S.png", "raw", file.info("S.png")[1, "size"]), "txt"))),
-              .bs
-              ))
-    })),
-  HTML('</div>')
-)
-# library(magick)
-# img <- image_graph(600, 400, res = 96)
-# print(Coursework$Fall2017$sem_graph)
-# dev.off()
-# img <- image_background(image_trim(img), 'white')
-# animation <- image_animate(img)
-```
-
-
-```{r 'Display', eval = F, results = 'asis', cache = F}
-fluidRow(
-div(class = "nav flex-column nav-pills col-sm-2",
-    id = "v-pills-tab",
-    role = "tablist",
-    `aria-orientation` = "vertical",
-    tagList(purrr::imap(Coursework, ~ {
-      .prefix <- str_remove(.y, "\\s")
-      a(class = "nav-link",
-        id = paste0("v-pills-",.prefix,"-tab"),
-        `data-toggle` = "pill",
-        href = paste0("#v-pills-",.prefix),
-        role="tab",
-        `aria-controls` = paste0("v-pills-",.prefix),
-        `aria-selected` = "false",
-        .y)
-      }))
-  ),
-div(class = "col-sm-10 tab-content", id = "v-pills-tabContent")
-)  
-```
-
-
-
-```{r 'Spring 2018', eval = F}
-.plot <- {PlusforTrello[stringr::str_detect(PlusforTrello$Board,"(?:PPUA5302)|(?:DA5030)"),] %>% group_by(Board,Week) %>% summarise(TotalHrsPerWeek=sum(S)) -> PfTSummary} %>% 
-  ggplot(data = .,mapping=aes(x=Week,y=TotalHrsPerWeek))+
-  geom_bar(stat="identity",aes(fill=Board))+
-  coord_flip()+
-  theme_minimal()+
-  labs(title = "Total hours per week",
-  subtitle = "Fill color by course",
-  x = "Week",y = "Hours") +
-  theme(plot.title = element_text(hjust = .5),plot.subtitle = element_text(hjust = .5), plot.caption=element_text(hjust=0))+
-  scale_fill_discrete(breaks=c("DA5030","PPUA5302"))
-.summary <- htmltools::tagList(
-                  htmltools::tags$p(paste("Total hours: ",{PfTSummary %>% group_by(Board) %>% summarise(`Total Hours`= sum(TotalHrsPerWeek)) -> CourseHrs} %>% .$`Total Hours` %>% sum)),
-                  HTML({
-                    left_join(
-                      CourseHrs %>% as.data.frame,
-                      PfTSummary  %>% group_by(Board) %>% summarize(`Avg Hrs/Wk`= round(mean(TotalHrsPerWeek), 2)),
-                      by = "Board") %>% kableExtra::kable("html") %>% kableExtra::kable_styling(position = "center")
-                  })
-                )
-```
-
-
-```{r 'Spring 2018 Layout', eval = F}
+    list(title = .y, .bs, box_height = "40px")
+  })
+.args <- append(purrr::map(tabs, do.call, what = verticalTabPanel), list(color = "#6d94bf", contentWidth = 10))
 fluidPage(
-    mainPanel(
-      tabsetPanel(
-        tabPanel(title = "Weekly Hours", renderPlot(.plot)),
-        tabPanel(title = "Summary", renderUI(.summary))
-      )
-    )
-  )
-```
-
-
-
-
-```{r 'Read_CSV_from_Plus_for_Trello Fall18', eval = F}
-PlusforTrello <- read.csv(file = "~//R//Quantified Self//PlusforTrelloFall2018.csv")
-names(PlusforTrello) %<>% gsub("[!@#$%^&*?.????]","",.,perl=T) # Remove the wierd symbols in the names
-PlusforTrello$Date %<>% lubridate::ymd_hm() # Make Date a date
-cols <- c(RColorBrewer::brewer.pal(12,name = "Paired")[5:6],RColorBrewer::brewer.pal(12,name = "Paired")[c(8,10)])
-names(cols) <- PlusforTrello$Board %>% unique %>% .[c(6,7,3,5)] %>% as.character()
-{PlusforTrello %>% filter(str_detect(Board,"(?:HINF)|(?:CAEP)")) %>% mutate(grp = str_extract(Board,"^\\w{4}\\s?\\d{4}") %>% gsub("\\s","",.))  %>% mutate_at(vars(grp),funs(as.factor)) %>% group_by(Board,grp,Week) %>% summarise(TotalHrsPerWeek=sum(S)) %>%  assign("PfTSummary",.,envir = .GlobalEnv)} %>% 
-  ggplot(data = .,mapping=aes(x=Week,y=TotalHrsPerWeek,group = grp))+
-  geom_bar(stat="identity",aes(fill=Board),position = "dodge")+
-  theme_minimal()+
-  labs(title = "Total hours per week",
-  subtitle = "Fill color by course",
-  caption = paste("Average Hours per Week:",paste0(names(with(PfTSummary,tapply(TotalHrsPerWeek,INDEX = Board,FUN = mean)) %>% .[1:4]),": ",with(PfTSummary,tapply(TotalHrsPerWeek,INDEX = Board,FUN = mean)) %>% .[1:4] %>% round(2),collapse="\n"),sep="\n"),
-  x = "Week",y = "Hours") +
-  scale_fill_manual(values = cols)+
-  coord_flip()+
-  scale_y_continuous(breaks = seq(0,max(PfTSummary$TotalHrsPerWeek),2),minor_breaks = seq(0,max(PfTSummary$TotalHrsPerWeek),1))+
-  theme_grey()+
-  theme(plot.title = element_text(hjust = .5),plot.subtitle = element_text(hjust = .5), plot.caption=element_text(hjust=0))
-ggsave("Fall2018Hours.png",device = "png",type = "cairo",width =12,height=9)
-  
-htmltools::tagList(htmltools::tags$p(paste("Total hours:",{PfTSummary %>% group_by(Board) %>% summarise(`Total Hours` = sum(TotalHrsPerWeek)) -> CourseHrs} %>% .$`Total Hours` %>% sum)))
-left_join(
-CourseHrs %>% as.data.frame %>% arrange(desc(`Total Hours`)),
-PfTSummary  %>% group_by(Board) %>% summarize(`Avg Hrs/Wk` = mean(TotalHrsPerWeek)),
-by = "Board"
+fluidRow(width = 12,
+  column(12,
+         slickR::slickR(obj = list.files("~/R/Scripts/R Experiential Coursework/sem_graphs", full.names = T), slideId = "sem_graphs", padding = 75)
+         )
+),
+fluidRow(width = 12,
+         column(12,
+                do.call(what = verticalTabsetPanel, args = .args)
+                )
+         )
 )
 
 ```
-
-
-
-
-
-
-```{r 'Spring 2019', eval = F}
-PlusforTrello <- read.csv(file = "~//R//Quantified Self//PlusforTrelloSpring2019.csv")
-names(PlusforTrello) %<>% gsub("[!@#$%^&*?.????]","",.,perl=T) # Remove the wierd symbols in the names
-PlusforTrello$Date %<>% lubridate::ymd_hm() # Make Date a date
-cols <- HDA::ggColor(5)
-names(cols) <- PlusforTrello$Board %>% unique %>% .[c(3,4,5,7,10)] %>% as.character()
-{PlusforTrello %>% filter(str_detect(Board,"(?:HINF)|(?:Mariy)|(?:Capstone)")) %>% mutate(grp = str_extract(Board,"^\\w{4}\\s?\\d{4}") %>% gsub("\\s","",.))  %>% mutate_at(vars(grp),funs(as.factor)) %>% group_by(Board,grp,Week) %>% summarise(TotalHrsPerWeek=sum(S)) %>%  assign("PfTSummary",.,envir = .GlobalEnv)} %>% 
-  ggplot(data = .,mapping=aes(x=Week,y=TotalHrsPerWeek,group = grp))+
-  geom_bar(stat="identity",aes(fill=Board),position = "dodge")+
-  theme_minimal()+
-  labs(title = "Total hours per week",
-  subtitle = "Fill color by course",
-  caption = paste("Average Hours per Week:",paste0(names(with(PfTSummary,tapply(TotalHrsPerWeek,INDEX = Board,FUN = mean)) %>% .[!is.na(.)]),": ",with(PfTSummary,tapply(TotalHrsPerWeek,INDEX = Board,FUN = mean)) %>% .[!is.na(.)] %>% .[1:5] %>% round(2),collapse="\n"),sep="\n"),
-  x = "Week",y = "Hours") +
-  scale_fill_manual(values = cols)+
-  coord_flip()+
-  scale_y_continuous(breaks = seq(0,max(PfTSummary$TotalHrsPerWeek),2),minor_breaks = seq(0,max(PfTSummary$TotalHrsPerWeek),1))+
-  theme_grey()+
-  theme(plot.title = element_text(hjust = .5),plot.subtitle = element_text(hjust = .5), plot.caption=element_text(hjust=0))
-ggsave("Spring2019Hours.png",device = "png",type = "cairo",width =12,height=9)
-  
-htmltools::tagList(htmltools::tags$p(paste("Total hours:",{PfTSummary %>% group_by(Board) %>% summarise(TotalCourseHours=sum(TotalHrsPerWeek)) -> CourseHrs} %>% .$TotalCourseHours %>% sum)))
-htmltools::tagList(htmltools::tags$h3("Total hours per course"))
-CourseHrs %>% as.data.frame %>% arrange(desc(TotalCourseHours)) %>% kableExtra::kable("html") %>% kableExtra::kable_styling(position = "center")
-htmltools::tags$p("Average Hours spent per week per Course")
-PfTSummary  %>% group_by(Board) %>% summarize(Avg=mean(TotalHrsPerWeek)) %>% arrange(desc(Avg)) %>% kableExtra::kable("html") %>% kableExtra::kable_styling(position = "center")
-```
-
-
-
-```{r 'Fall 2019', eval = F}
-#Calculation of personal hours for TRACE :  Mon Dec 09 17:40:48 2019 ----
-hours <- list()
-hours$class <- read_csv("../../HINF5300Hours.csv")
-hours$project <- read_csv("../../HINF5300ProjectHours.csv")
-hours %<>% bind_rows() 
-hours %>%
-  select(Week, S) %>% 
-  mutate(Wk = str_extract(Week, "\\d{2}$") %>% as.numeric()) %>% 
-  group_by(Wk) %>% 
-  summarise(Total = sum(S)) %T>% 
-  {assign("avg", mean(.[["Total"]]), .GlobalEnv)} %>% 
-  ggplot(aes(x = Wk))+
-  geom_line(aes(y = Total)) +
-  geom_point(aes(y = Total)) +
-  geom_hline(yintercept = avg) +
-  scale_y_continuous(breaks = function(lims){lims <- round(lims,0);seq(lims[1], lims[2], 10)}, minor_breaks = function(lims){lims <- round(lims,0);seq(lims[1], lims[2], 5)}) +
-  geom_label(aes(y = avg, x = 37), label = round(avg, 0)) +
-  labs(title = "Hours by Week",
-  subtitle = "HINF 5300",
-  caption = "Project and course combined",
-  x = "Week Number",y = "Hours") +
-  theme(plot.title = element_text(hjust = .5),plot.subtitle = element_text(hjust = .5))
-  ggsave("../../HoursGraph.png", device = "png", dpi = "screen")
-```
-
-
-

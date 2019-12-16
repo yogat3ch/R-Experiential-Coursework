@@ -1,0 +1,111 @@
+$lg: linear-gradient(#6d94bf, #446e9b 50%, #3e648d);
+$bs: inset 1px 1px 1px rgba(255, 255, 255, .4),
+inset -1px -1px 1px rgba(0, 0, 0, .4);
+
+div.vrtc-tab-panel-container>div.vrtc-tab-panel-menu>div.vertical-tab-panel>a.list-group-item {
+  padding: 0px;
+
+  &.active {
+    background-image: $lg;
+  }
+}
+
+// SlickR slider formatting 2019-12-16 1530
+.slick-prev {
+  left: -5px;
+  z-index: 2;
+}
+
+.slick-next {
+  right: -5px;
+}
+
+// navbar formatting 2019-12-16 1532
+.navbar-inverse {
+  background-image: $lg;
+  border-color: #3e648d;
+
+  .navbar-brand {
+    color: #fff;
+  }
+}
+
+.navbar-nav>.active,
+li {
+  background-image: $lg;
+
+  &>a {
+    background-color: transparent !important;
+  }
+
+  &>a:hover,
+  &>a:focus {
+    box-shadow: $bs;
+    background-color: transparent !important;
+  }
+}
+
+.pagination>.active {
+  &>a,
+  &:hover,
+  &:focus {
+    color: #23527c !important;
+
+  }
+}
+
+/* Value box */
+
+.value-box {
+  border-radius: 2px;
+  position: relative;
+  display: block;
+  margin-right: 8px;
+  margin-bottom: 8px;
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
+}
+
+.html-widget-static-bound {
+  width: inherit;
+  height: inherit;
+}
+
+.value-box>.inner {
+  padding: 10px;
+  padding-left: 20px;
+  padding-right: 20px;
+}
+
+.value-box .value {
+  font-size: 38px;
+  font-weight: bold;
+  margin: 0 0 3px 0;
+  white-space: nowrap;
+  padding: 0;
+}
+
+.value-box .caption {
+  font-size: 15px;
+}
+
+.value-box .caption>small {
+  display: block;
+  font-size: 13px;
+  margin-top: 5px;
+}
+
+.value-box .icon i {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  font-size: 80px;
+  color: rgba(0, 0, 0, 0.15);
+}
+
+.linked-value:hover {
+  cursor: pointer;
+}
+
+.value-box.linked-value:hover {
+  box-shadow: 0 2px 2px rgba(0, 0, 0, 0.3);
+}

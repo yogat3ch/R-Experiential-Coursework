@@ -1,11 +1,10 @@
 #R Line Counter:  Fri Dec 13 16:36:31 2019 ----
 
-paths <- c("~\\Veginvesting","~\\Northeastern","~\\Graduate Studies Resumes,Transcripts & Applications")
+paths <- c("~/Veginvesting","~/Northeastern","~/Graduate Studies Resumes,Transcripts & Applications")
 paths <- c(list.dirs("~/R", recursive = F) %>%
-             purrr::keep(~ {!str_detect(.x, "Scripts|rsconnect|win-library|Contributor Repos")}), paths)
+             purrr::keep(~ {!str_detect(.x, "rsconnect|win-library|Contributor Repos")}), paths)
 # Get all directories under R except for win-library, Scripts and rsconnect
-paths <- c(list.dirs("~/R/Scripts", recursive = F) %>%
-             purrr::keep(~ {!str_detect(.x, "rsconnect")}), paths)
+
 all.rmd <- sapply(paths, list.files, pattern = "[A-Za-z0-9\\_\\.\\s\\-]+\\.[Rr][^d|p]?m?[^x|s|r]?d?$", all.files = T, full.names = T, recursive = T, ignore.case = T, include.dirs = T)
 all.rmd <- lapply(all.rmd, function(l){
   l <- l[!grepl("win-library", l)]
@@ -55,7 +54,7 @@ rmd.attr <- purrr::map_depth(all.rmd, .depth = 2,.f = function(.x){
     }) %>% unlist %>% unique
   } else {
     .fns <- stringr::str_extract_all(.file_text, "[A-Za-z\\_\\`][A-Za-z0-9\\.\\_\\:]+(?=\\()") %>% unlist %>% trimws %>% unique
-    .total_lines <- length(.file_text)
+    .total_lines <- length(.file_text[purrr::map_lgl(.file_text, ~{nchar(.x) > 0})])
   }
   .pkgs <- stringr::str_extract(.fns, "[[:alnum:]\\_]+(?=\\:\\:)") %>% purrr::keep(~ !is.na(.))
   .fns %<>% purrr::map_chr(function(.x) {
@@ -138,9 +137,9 @@ Coursework <- list(Fall2017 = list(PPUA5301 = list(fullname = "Introduction to C
 #'Write Output Summaries and Graphs for all courses':  Fri Dec 13 16:37:18 2019 ----
 
 Coursework <- purrr::imap(Coursework, .dat = PlusforTrello, function(.x, .y, .dat){
-  .sem <- .x %>% extract(value = - which(names(.) == "dates"))
-  print(paste0(names(.sem), collape = ","))
-  print(class(.x$dates))
+  .sem <- .x %>% magrittr::extract(value = - which(names(.) == "dates"))
+  # print(paste0(names(.sem), collape = ","))
+  # print(class(.x$dates))
   .dat <- .dat %>% dplyr::filter(str_detect(Board, paste0(names(.x), collapse = "|")) & Date %within% .x$dates) # Filter the Courses for that semester
   .avg <- .dat %>% group_by(Week) %>% summarise(TotalHrs = sum(S)) %>% extract2("TotalHrs") %>% mean(na.rm = T)
   .gg <- {.dat %>% group_by(Board, Week) %>% summarise(TotalHrsPerWeek=sum(S)) -> .summary} %>% 
@@ -164,7 +163,7 @@ Coursework <- purrr::imap(Coursework, .dat = PlusforTrello, function(.x, .y, .da
     .gg_course <- ggplot(data = .sum_df, aes_string(x = "Week", y = "TotalHrs", fill = "Board")) +
       geom_col() +
       geom_hline(yintercept = .avg) + 
-      geom_text(aes(x = 0, y = .avg, label = "Average"), vjust = -1, nudge_x = 1.2) +
+      geom_text(aes(x = 0, y = .avg, label = "Average"), vjust = -1, nudge_x = 1.5) +
       scale_y_continuous(breaks = function(lims, .b = 5){seq(0, {.b * lims[2] %/% .b}, .b)}, minor_breaks = function(lims, .b = 1){seq(0, {.b * lims[2] %/% .b}, .b)}) +
       labs(title = glue::glue("Weekly Hours: {.y}"),
            subtitle = "",
