@@ -106,7 +106,7 @@ tags$h4("Table of functions used and # of uses"),
 ```{r 'Display DT for packages', eval = T, cache = F}
 tagList(
          tags$h4("Table of packages used and # of uses"),
-          HTML("<em>A (nearly) complete searchable table of all packages used to date in R. </em>"),
+          HTML("<p>A (nearly) complete searchable table of all packages used to date in R. <em>For ease, uses are counted by the number of occurences of explicit inline calls ie 'package::', implicit calls where a library call was used previously will show lower totals. </em></p>"),
          DT::datatable(.packages, width = "100%", options = list(autoWidth = TRUE), style = "bootstrap", fillContainer = F)
 )
 
@@ -127,30 +127,61 @@ Row
 ```{r 'Vertical Tab Panel', eval = T}
 tabs <- purrr::imap(Coursework, ~{
   .course <- .x
-    ggsave(glue::glue("{which(names(Coursework) == .y)}_{.y}.png"), plot = .x$sem_graph, path = "sem_graphs", device = "png", dpi = 72, scale= .75)
-   .bs <- bsplus::bs_accordion(id = .y) %>%
-                bsplus::bs_set_opts(panel_type = "success", use_heading_link = TRUE)
-                purrr::iwalk(.course[names(.course) != "sem_graph"], ~{
-                  ggsave("Class.png", plot = .x$graph, device = "png", dpi = 72, scale= .75)
-                  .bs <<- .bs %>%
-                    bsplus::bs_append(title = glue::glue("{.y} - {.x$fullname}"), content = 
-                                        tags$div(tags$p(glue::glue("Description: {.x$description}")), img(src = paste0("data:image/png;base64,",RCurl::base64Encode(readBin("Class.png", "raw", file.info("Class.png")[1, "size"]), "txt")))))
-                                      
-                })
-    list(title = .y, .bs, box_height = "40px")
+  ggsave(glue::glue("{which(names(Coursework) == .y)}_{.y}.png"), plot = .x$sem_graph, path = "sem_graphs", device = "png", dpi = 72, scale= .75)
+  .bs <- bsplus::bs_accordion(id = .y) %>%
+    bsplus::bs_set_opts(panel_type = "success", use_heading_link = TRUE)
+  purrr::iwalk(.course[names(.course) != "sem_graph"], ~{
+    .desc <- tags$p(glue::glue("Description: {.x$description}"))
+    # Syllabus Links
+    if (!is.null(.x$syllabus))
+      .syllabus <- tags$p("For a more comprehensive look at topics covered, see the", tags$a(href = .x$syllabus, target = "_blank", "syllabus"))
+    else
+      .syllabus <- ""
+    # Image
+    ggsave("Class.png", plot = .x$graph, device = "png", dpi = 72, scale= .75)
+    .img <- img(src = paste0("data:image/png;base64,", RCurl::base64Encode(readBin("Class.png", "raw", file.info("Class.png")[1, "size"]), "txt")))
+    # Major projects
+    if (!is.null(.x$projects))
+      .p_table <- purrr::imap(.x$projects, .name = .y, function(.x, .y, .name){
+        if (str_detect(.x, regex("rpubs", ignore_case = T))) {
+          .t <- xml2::read_html(.x) %>%
+            rvest::html_node("title") %>%
+            rvest::html_text() %>% 
+            str_remove("^RPubs - ")
+        } else {
+          .t <- .y
+        }
+        if (.name == "PPUA5301")  .t %<>% str_extract("(?<=[:] ).*") 
+        .t %<>% str_replace("&amp;","&")
+        
+        tags$tr(tags$td(tags$a(href = .x, target = "_blank", .t)))
+      }) %>% {tags$table(tags$tbody(tags$thead(tags$tr(tags$td("Projects"))), .))}
+    else
+      .p_table <- NULL
+    
+    .tL <- tagList(fluidRow(width = 12, .desc, .syllabus), fluidRow(width = 12, column(6,.img), column(6, .p_table)))
+    
+    .bs <<- .bs %>%
+      bsplus::bs_append(title = glue::glue("{.y} - {.x$fullname}"),
+                        content = tags$div(.tL)
+      )
+    
+    
   })
+  list(title = .y, .bs, box_height = "40px")
+})
 .args <- append(purrr::map(tabs, do.call, what = verticalTabPanel), list(color = "#6d94bf", contentWidth = 10))
 fluidPage(
-fluidRow(width = 12,
-  column(12,
-         slickR::slickR(obj = list.files("~/R/Scripts/R Experiential Coursework/sem_graphs", full.names = T), slideId = "sem_graphs", padding = 75)
-         )
-),
-fluidRow(width = 12,
-         column(12,
-                do.call(what = verticalTabsetPanel, args = .args)
-                )
-         )
+  fluidRow(width = 12,
+           column(12,
+                  slickR::slickR(obj = list.files("~/R/Scripts/R Experiential Coursework/sem_graphs", full.names = T), slideId = "sem_graphs", padding = 75)
+           )
+  ),
+  fluidRow(width = 12,
+           column(12,
+                  do.call(what = verticalTabsetPanel, args = .args)
+           )
+  )
 )
 
 ```
